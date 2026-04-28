@@ -5,6 +5,12 @@ on:
     tags:
       - "v*"
   workflow_dispatch:
+    inputs:
+      dry_run:
+        description: Build and validate release artifacts without publishing.
+        required: false
+        type: boolean
+        default: true
 
 env:
   FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: "true"
@@ -12,33 +18,60 @@ env:
 permissions:
   contents: write
 
+concurrency:
+  group: release-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: false
+
 jobs:
   build:
+    uses: ./.github/workflows/reusable-python-checks.yml
+    with:
+      upload_dist: true
+    permissions:
+      contents: read
+
+  dry-run:
+    needs: build
+    if: github.event_name == 'workflow_dispatch' && inputs.dry_run
     runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: read
 
     steps:
-      - name: Checkout
-        uses: actions/checkout@v5
-
-      - name: Set up Python
-        uses: actions/setup-python@v6
-        with:
-          python-version: "3.12"
-
-      - name: Install build tooling
-        run: python -m pip install build twine
-
-      - name: Build distributions
-        run: python -m build
-
-      - name: Validate distributions
-        run: python -m twine check dist/*
-
-      - name: Upload artifacts
-        uses: actions/upload-artifact@v7
+      - name: Download dry-run artifacts
+        uses: actions/download-artifact@v5
         with:
           name: package-dist
-          path: dist/*
+          path: dist
+
+      - name: Verify dry-run artifacts
+        run: |
+          test -n "$(find dist -maxdepth 1 -name '*.whl' -print -quit)"
+          test -n "$(find dist -maxdepth 1 -name '*.tar.gz' -print -quit)"
+          {
+            echo "## Release dry run"
+            echo
+            echo "Built and validated release artifacts without publishing."
+            echo
+            echo "- Ref: ${GITHUB_REF_NAME}"
+            echo "- Artifact: package-dist"
+          } >> "$GITHUB_STEP_SUMMARY"
+
+  publish:
+    needs: build
+    if: startsWith(github.ref, 'refs/tags/') && (github.event_name == 'push' || inputs.dry_run == false)
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: write
+
+    steps:
+      - name: Download artifacts
+        uses: actions/download-artifact@v5
+        with:
+          name: package-dist
+          path: dist
 
       - name: Create GitHub release
         if: startsWith(github.ref, 'refs/tags/')
