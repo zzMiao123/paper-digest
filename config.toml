@@ -54,6 +54,7 @@ reasoning_effort = "minimal"
 name = "Soft tactile sensors for robotics and wearables"
 source = "crossref"
 queries = [
+  "stretchable tactile sensor",
   "soft tactile sensor robotics wearable electronic skin",
   "flexible tactile sensor robotic gripper wearable",
   "electronic skin tactile sensing robot wearable",
@@ -103,7 +104,7 @@ exclude_keywords = [
   "electrocatalysis",
   "water splitting"
 ]
-max_results = 30
+max_results = 300
 max_items = 10
 sort_by = "relevance"
 
@@ -132,7 +133,9 @@ keywords = [
   "artificial muscles",
   "electromechanical actuator",
   "electromechanical actuation",
-  "soft robotic actuator"
+  "soft robotic actuator",
+  "dielectric elastomer actuator",
+  "artificial muscle"
 ]
 exclude_keywords = [
   "Scientific Reports",
@@ -147,7 +150,7 @@ exclude_keywords = [
   "electrocatalysis",
   "water splitting"
 ]
-max_results = 30
+max_results = 300
 max_items = 10
 sort_by = "relevance"
 
@@ -186,6 +189,7 @@ keywords = [
   "soft machines",
   "untethered soft robot",
   "soft wearable robot"
+
 ]
 exclude_keywords = [
   "Scientific Reports",
@@ -200,7 +204,7 @@ exclude_keywords = [
   "electrocatalysis",
   "water splitting"
 ]
-max_results = 30
+max_results = 300
 max_items = 10
 sort_by = "relevance"
 
@@ -245,9 +249,6 @@ keywords = [
 ]
 exclude_keywords = [
   "Scientific Reports",
-  "large language model",
-  "LLM",
-  "vision-language model",
   "chatbot",
   "autonomous driving",
   "drone swarm",
@@ -255,6 +256,6 @@ exclude_keywords = [
   "MRI",
   "CT image"
 ]
-max_results = 30
+max_results = 300
 max_items = 10
 sort_by = "relevance"
