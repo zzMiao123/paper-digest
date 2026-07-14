@@ -217,10 +217,18 @@ def parse_crossref_item(item: dict[str, object]) -> Paper:
         else []
     )
 
+    journal = _extract_journal_name(item)
+    priority = _journal_priority(journal)
+    
+    if priority is None:
+        raise CrossrefClientError(f"journal not in whitelist: {journal}")
+    
+    authors = _extract_authors(item.get("author"))
+
     return Paper(
         title=title,
         summary=_extract_abstract(item.get("abstract")),
-        authors=_extract_authors(item.get("author")),
+        authors=authors,
         categories=categories,
         paper_id=f"https://doi.org/{doi}",
         abstract_url=abstract_url,
@@ -234,6 +242,12 @@ def parse_crossref_item(item: dict[str, object]) -> Paper:
             "crossref": abstract_url,
             "doi": f"https://doi.org/{doi}",
         },
+        tags=[
+            f"Journal: {journal}",
+            f"IF: {_journal_if(journal)}",
+            f"JournalPriority: {priority}",
+        ],
+        topics=_corresponding_author_guess(authors),
     )
 
 
