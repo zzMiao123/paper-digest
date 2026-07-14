@@ -1,0 +1,260 @@
+[app]
+timezone = "America/Chicago"
+lookback_hours = 72
+output_dir = "output"
+request_delay_seconds = 3
+request_timeout_seconds = 60
+fetch_retry_attempts = 4
+fetch_retry_backoff_seconds = 10
+
+[state]
+enabled = true
+path = ".paper-digest-state/state.json"
+retention_days = 90
+
+[feedback]
+enabled = true
+path = ".paper-digest-state/feedback.json"
+star_boost = 80
+follow_up_boost = 35
+reading_boost = 18
+done_penalty = 20
+ignore_penalty = 120
+hide_ignored = true
+
+[digest]
+template = "zh_daily_brief"
+top_highlights = 3
+feed_key_points = 3
+
+[ranking]
+sort_by = "relevance"
+title_match_weight = 40
+summary_match_weight = 18
+doi_weight = 12
+pdf_weight = 8
+rich_summary_weight = 6
+metadata_weight = 4
+multi_source_weight = 10
+freshness_weight_cap = 24
+
+[analysis]
+enabled = false
+provider = "openai"
+model = "gpt-5-mini"
+api_key_env = "OPENAI_API_KEY"
+base_url = "https://api.openai.com/v1/responses"
+timeout_seconds = 60
+max_papers = 8
+max_output_tokens = 600
+language = "Chinese"
+reasoning_effort = "minimal"
+
+[[feeds]]
+name = "Soft tactile sensors for robotics and wearables"
+source = "crossref"
+queries = [
+  "soft tactile sensor robotics wearable electronic skin",
+  "flexible tactile sensor robotic gripper wearable",
+  "electronic skin tactile sensing robot wearable",
+  "soft pressure sensor robotic tactile skin wearable",
+  "tactile sensor array soft robotics wearable"
+]
+types = ["journal-article"]
+keywords = [
+  "soft haptic sensor",
+  "soft tactile sensor",
+  "tactile sensor",
+  "tactile sensing",
+  "tactile skin",
+  "electronic skin",
+  "artificial skin",
+  "wearable sensor",
+  "wearable tactile sensor",
+  "flexible tactile sensor",
+  "stretchable tactile sensor",
+  "flexible pressure sensor",
+  "stretchable pressure sensor",
+  "soft pressure sensor",
+  "sensor array",
+  "tactile sensor array",
+  "robotic tactile sensor",
+  "robotic tactile skin",
+]
+exclude_keywords = [
+  "Scientific Reports",
+  "review",
+  "survey",
+  "tutorial",
+  "gas sensor",
+  "humidity sensor",
+  "temperature sensor",
+  "chemical sensor",
+  "glucose sensor",
+  "sweat sensor",
+  "biosensor",
+  "immunosensor",
+  "DNA sensor",
+  "photodetector",
+  "solar cell",
+  "battery",
+  "supercapacitor",
+  "catalyst",
+  "electrocatalysis",
+  "water splitting"
+]
+max_results = 30
+max_items = 10
+sort_by = "relevance"
+
+[[feeds]]
+name = "Science Nature dielectric elastomer actuators"
+source = "crossref"
+queries = [
+  "dielectric elastomer actuator soft robot",
+  "dielectric elastomer artificial muscle",
+  "electroactive polymer soft actuator",
+  "soft robotic actuator dielectric elastomer",
+  "stretchable actuator dielectric elastomer"
+]
+types = ["journal-article"]
+keywords = [
+  "dielectric elastomer actuator",
+  "dielectric elastomer actuators",
+  "dielectric elastomer",
+  "electroactive polymer",
+  "electroactive polymers",
+  "soft actuator",
+  "soft actuators",
+  "stretchable actuator",
+  "compliant actuator",
+  "artificial muscle",
+  "artificial muscles",
+  "electromechanical actuator",
+  "electromechanical actuation",
+  "soft robotic actuator"
+]
+exclude_keywords = [
+  "Scientific Reports",
+  "review",
+  "survey",
+  "tutorial",
+  "battery",
+  "supercapacitor",
+  "solar cell",
+  "photodetector",
+  "catalyst",
+  "electrocatalysis",
+  "water splitting"
+]
+max_results = 30
+max_items = 10
+sort_by = "relevance"
+
+[[feeds]]
+name = "Science Nature soft robotics"
+source = "crossref"
+queries = [
+  "soft robotics",
+  "soft robot",
+  "soft gripper",
+  "soft actuator",
+  "soft manipulation",
+  "continuum robot",
+  "bioinspired soft robot"
+]
+types = ["journal-article"]
+keywords = [
+  "soft robotics",
+  "soft robot",
+  "soft robots",
+  "soft gripper",
+  "soft grippers",
+  "soft actuator",
+  "soft actuators",
+  "soft robotic",
+  "soft robotic system",
+  "soft robotic systems",
+  "soft manipulator",
+  "soft manipulation",
+  "continuum robot",
+  "continuum robots",
+  "bioinspired robot",
+  "bio-inspired robot",
+  "biomimetic robot",
+  "soft machine",
+  "soft machines",
+  "untethered soft robot",
+  "soft wearable robot"
+]
+exclude_keywords = [
+  "Scientific Reports",
+  "review",
+  "survey",
+  "tutorial",
+  "battery",
+  "supercapacitor",
+  "solar cell",
+  "photodetector",
+  "catalyst",
+  "electrocatalysis",
+  "water splitting"
+]
+max_results = 30
+max_items = 10
+sort_by = "relevance"
+
+[[feeds]]
+name = "Science Nature human robot interaction"
+source = "crossref"
+queries = [
+  "human robot interaction",
+  "human-robot interaction",
+  "human robot collaboration",
+  "human-robot collaboration",
+  "physical human robot interaction",
+  "assistive robot",
+  "rehabilitation robot",
+  "wearable robot human interaction"
+]
+types = ["journal-article"]
+keywords = [
+  "human robot interaction",
+  "human-robot interaction",
+  "HRI",
+  "human robot collaboration",
+  "human-robot collaboration",
+  "human robot teaming",
+  "human-robot teaming",
+  "physical human robot interaction",
+  "physical human-robot interaction",
+  "pHRI",
+  "shared autonomy",
+  "assistive robot",
+  "assistive robotics",
+  "rehabilitation robot",
+  "rehabilitation robotics",
+  "wearable robot",
+  "wearable robotics",
+  "collaborative robot",
+  "collaborative robotics",
+  "cobot",
+  "cobots",
+  "learning from demonstration",
+  "tactile interaction"
+]
+exclude_keywords = [
+  "Scientific Reports",
+  "large language model",
+  "LLM",
+  "vision-language model",
+  "chatbot",
+  "autonomous driving",
+  "drone swarm",
+  "medical image",
+  "MRI",
+  "CT image"
+]
+max_results = 30
+max_items = 10
+sort_by = "relevance"
