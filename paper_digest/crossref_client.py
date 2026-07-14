@@ -130,7 +130,8 @@ def _corresponding_author_guess(authors: list[str]) -> list[str]:
 
 class CrossrefClientError(RuntimeError):
     """Raised when Crossref fetches or parsing fail."""
-
+class CrossrefSkipItem(RuntimeError):
+    """Raised when a Crossref item should be skipped without failing the run."""
 
 def fetch_latest_crossref_papers(
     feed: FeedConfig,
@@ -195,7 +196,18 @@ def parse_crossref_response(payload: bytes) -> list[Paper]:
     if not isinstance(items, list):
         raise CrossrefClientError("Crossref response items payload is invalid")
 
-    return [parse_crossref_item(item) for item in items if isinstance(item, dict)]
+    papers: list[Paper] = []
+
+    for item in items:
+        if not isinstance(item, dict):
+            continue
+    
+        try:
+            papers.append(parse_crossref_item(item))
+        except CrossrefSkipItem:
+            continue
+    
+    return papers
 
 
 def parse_crossref_item(item: dict[str, object]) -> Paper:
@@ -221,7 +233,9 @@ def parse_crossref_item(item: dict[str, object]) -> Paper:
     priority = _journal_priority(journal)
     
     if priority is None:
-        raise CrossrefClientError(f"journal not in whitelist: {journal}")
+        raise CrossrefSkipItem(f"journal not in whitelist: {journal}")
+
+    
     
     authors = _extract_authors(item.get("author"))
 
