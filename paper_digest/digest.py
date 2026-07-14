@@ -252,7 +252,14 @@ def finalize_digest_scoring(digest: DigestRun, *, ranking: RankingConfig) -> Non
                 paper.base_relevance_score
                 + _cross_source_score_bonus(paper, ranking.weights)
             )
-        feed.papers.sort(key=lambda item: _paper_sort_key(item, sort_by=feed.sort_by))
+        feed.papers.sort(
+            key=lambda item: (
+                _journal_priority_from_tags(item),
+                -item.relevance_score,
+                -item.published_at.timestamp(),
+                item.title.lower(),
+            )
+        )
     digest.sort_summary = _build_sort_summary(digest)
 
 
@@ -342,21 +349,27 @@ def _render_default_markdown(digest: DigestRun) -> str:
 
             lines.append(f"{index}. [{paper.title}]({paper.abstract_url})")
             lines.append(f"   - {paper.date_label}: {published}")
-            lines.append(f"   - Authors: {authors}")
-            lines.append(f"   - Source: {paper.source_label()}")
-            feedback = feedback_label(paper.feedback_status)
-            if feedback is not None:
-                lines.append(f"   - Feedback: {feedback}")
-            if paper.feedback_note:
-                lines.append(f"   - Note: {paper.feedback_note}")
-            if paper.relevance_score:
-                lines.append(f"   - Relevance: {paper.relevance_score}")
-            if paper.match_reasons:
-                lines.append(
-                    "   - Match Reasons: "
-                    + paper.match_reason_label(limit=4)
-                )
-            lines.append(f"   - Categories: {', '.join(paper.categories)}")
+            journal = next(
+                (tag.removeprefix("Journal:").strip() for tag in paper.tags if tag.startswith("Journal:")),
+                "Unknown journal",
+            )
+            impact_factor = next(
+                (tag.removeprefix("IF:").strip() for tag in paper.tags if tag.startswith("IF:")),
+                "check JCR",
+            )
+            corresponding = paper.topics[0] if paper.topics else "Not available; last author not inferred"
+            
+            lines.append(f" - Journal: {journal}")
+            lines.append(f" - Impact Factor: {impact_factor}")
+            lines.append(f" - Date: {published}")
+            lines.append(f" - Authors: {authors}")
+            lines.append(f" - Corresponding / senior author guess: {corresponding}")
+            # if paper.match_reasons:
+            #     lines.append(
+            #         "   - Match Reasons: "
+            #         + paper.match_reason_label(limit=4)
+            #     )
+            # lines.append(f"   - Categories: {', '.join(paper.categories)}")
             if paper.pdf_url:
                 lines.append(f"   - PDF: {paper.pdf_url}")
             if paper.analysis is not None:
@@ -1135,6 +1148,14 @@ def _merge_unique_reasons(reasons: list[str]) -> list[str]:
         merged.append(normalized)
     return merged
 
+def _journal_priority_from_tags(paper) -> int:
+    for tag in paper.tags:
+        if tag.startswith("JournalPriority:"):
+            try:
+                return int(tag.split(":", maxsplit=1)[1].strip())
+            except ValueError:
+                return 99
+    return 99
 
 def _paper_sort_key(
     paper: Paper,
