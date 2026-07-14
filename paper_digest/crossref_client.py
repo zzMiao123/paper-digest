@@ -15,6 +15,118 @@ from .network import fetch_bytes_with_retry
 
 CROSSREF_API_URL = "https://api.crossref.org/works"
 
+TOP_JOURNAL_PRIORITY = {
+    # Tier 0
+    "nature": 0,
+    "science": 0,
+
+    # Tier 1: Nature big journals / Science family / PNAS
+    "nature materials": 1,
+    "nature electronics": 1,
+    "nature nanotechnology": 1,
+    "nature machine intelligence": 1,
+    "nature biomedical engineering": 1,
+    "nature communications": 1,
+    "science robotics": 1,
+    "science advances": 1,
+    "proceedings of the national academy of sciences": 1,
+    "pnas": 1,
+
+    # Tier 2: Advanced family
+    "advanced materials": 2,
+    "advanced functional materials": 2,
+    "advanced science": 2,
+    "advanced intelligent systems": 2,
+    "advanced materials technologies": 2,
+    "advanced healthcare materials": 2,
+    "advanced sensor research": 2,
+
+    # Tier 3: robotics / haptics venues
+    "ieee robotics and automation letters": 3,
+    "robotics and automation letters": 3,
+    "ieee transactions on robotics": 3,
+    "transactions on robotics": 3,
+    "ieee transactions on haptics": 3,
+    "transactions on haptics": 3,
+}
+
+BLOCKED_JOURNALS = {
+    "scientific reports",
+}
+
+# 手动维护。先用字符串，避免 IF 每年更新导致误读。
+# 你可以之后按 UIUC Web of Science / JCR 更新成最新值。
+JOURNAL_IMPACT_FACTOR = {
+    "nature": "high",
+    "science": "high",
+    "nature materials": "high",
+    "nature electronics": "high",
+    "nature nanotechnology": "high",
+    "nature machine intelligence": "high",
+    "nature biomedical engineering": "high",
+    "nature communications": "high",
+    "science robotics": "high",
+    "science advances": "high",
+    "proceedings of the national academy of sciences": "high",
+    "pnas": "high",
+    "advanced materials": "high",
+    "advanced functional materials": "high",
+    "advanced science": "high",
+    "advanced intelligent systems": "check JCR",
+    "advanced materials technologies": "check JCR",
+    "advanced healthcare materials": "check JCR",
+    "advanced sensor research": "check JCR",
+    "ieee robotics and automation letters": "robotics venue",
+    "ieee transactions on robotics": "robotics venue",
+    "ieee transactions on haptics": "haptics venue",
+}
+
+def _extract_journal_name(item: dict[str, object]) -> str:
+    values = item.get("container-title", [])
+    if isinstance(values, list) and values:
+        value = values[0]
+        if isinstance(value, str):
+            return _clean_text(value)
+    return ""
+
+
+def _journal_key(journal: str) -> str:
+    return " ".join(journal.lower().replace("&", "and").split())
+
+
+def _journal_priority(journal: str) -> int | None:
+    key = _journal_key(journal)
+
+    if key in BLOCKED_JOURNALS:
+        return None
+
+    if key in TOP_JOURNAL_PRIORITY:
+        return TOP_JOURNAL_PRIORITY[key]
+
+    # 允许 Nature 小 NC / Communications 系列，但排除 Scientific Reports
+    if key.startswith("nature ") and key != "scientific reports":
+        return 1
+
+    if key.startswith("npj "):
+        return 2
+
+    if key.startswith("communications "):
+        return 2
+
+    return None
+
+
+def _journal_if(journal: str) -> str:
+    key = _journal_key(journal)
+    return JOURNAL_IMPACT_FACTOR.get(key, "check JCR")
+
+
+def _corresponding_author_guess(authors: list[str]) -> list[str]:
+    # Crossref 通常不给真正的 corresponding author。
+    # 这里用最后一位作者作为 engineering/materials 论文的粗略 proxy。
+    if not authors:
+        return []
+    return [authors[-1]]
 
 class CrossrefClientError(RuntimeError):
     """Raised when Crossref fetches or parsing fail."""
