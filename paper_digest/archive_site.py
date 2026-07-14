@@ -2974,53 +2974,105 @@ def _render_feed_card(
     link_prefix: str,
     feed_page_link: bool,
 ) -> str:
-    titles = "".join(
-        (
-            "<li>"
-            f'<a href="{escape(link_prefix + item.detail_href)}">'
-            f"{escape(item.title)}</a>"
-            + (
-                (
-                    '<span class="paper-inline-meta">'
-                    f" · Score {item.relevance_score}</span>"
-                )
-                if item.relevance_score > 0
-                else ""
-            )
-            + (
-                f'<div class="paper-inline-reason">'
-                f'{escape(_truncate(item.reason_summary, 120))}</div>'
-                if item.reason_summary
-                else ""
-            )
-            + (
-                '<div class="paper-inline-links">'
-                f'<a href="{escape(item.href)}" target="_blank" rel="noreferrer">'
-                "原始来源</a>"
-                "</div>"
-            )
-            + "</li>"
-        )
-        for item in feed.papers #papers[:5]
-    )
-    title_list = f'<ol class="paper-list">{titles}</ol>' if titles else ""
+    titles = "".join(_render_feed_paper_item(item, link_prefix=link_prefix) for item in feed.papers)
+    title_list = f"<ul>{titles}</ul>" if titles else ""
+
     feed_href = escape(link_prefix + "feeds/" + feed.slug + ".html")
     name_label = (
-        f'<a class="feed-name-link" href="{feed_href}">{escape(feed.name)}</a>'
+        f'<a href="{feed_href}">{escape(feed.name)}</a>'
         if feed_page_link
         else escape(feed.name)
     )
+
     return (
-        f'<section class="feed-card" data-feed-name="{escape(feed.name.lower())}">'
-        '<div class="feed-head">'
-        f'<span class="feed-name">{name_label}</span>'
-        f'<span class="feed-count">{feed.count} 篇</span>'
-        "</div>"
-        f'<p class="feed-summary">{escape(feed.summary)}</p>'
+        f'<article class="feed-card">'
+        f'<div class="feed-card-header">'
+        f"<h3>{name_label}</h3>"
+        f'<span class="count">{feed.count} 篇</span>'
+        f"</div>"
+        f"<p>{escape(feed.summary)}</p>"
         f"{title_list}"
-        "</section>"
+        f"</article>"
     )
 
+def _render_feed_paper_item(item: PaperArchive, *, link_prefix: str) -> str:
+    journal = _paper_tag_value(item, "Journal", "Unknown journal")
+    impact_factor = _paper_tag_value(item, "IF", "check JCR")
+    last_author = _paper_last_author(item)
+    date_label = _paper_date_label(item)
+    highlight = _paper_highlight(item)
+
+    return (
+        "<li>"
+        f'<a href="{escape(link_prefix + item.detail_href)}">'
+        f"{escape(item.title)}"
+        f"</a>"
+        '<div class="paper-meta">'
+        f"{escape(journal)}"
+        f" · IF {escape(impact_factor)}"
+        f" · {escape(date_label)}"
+        f" · Last author: {escape(last_author)}"
+        "</div>"
+        f'<div class="paper-summary">{escape(highlight)}</div>'
+        "</li>"
+    )
+
+
+def _paper_tag_value(item: PaperArchive, prefix: str, default: str = "") -> str:
+    marker = prefix + ":"
+
+    for tag in getattr(item, "tags", []):
+        if isinstance(tag, str) and tag.startswith(marker):
+            return tag.split(":", maxsplit=1)[1].strip()
+
+    return default
+
+
+def _paper_last_author(item: PaperArchive) -> str:
+    authors = getattr(item, "authors", [])
+
+    if authors:
+        return str(authors[-1])
+
+    # 如果你之前把最后一名作者临时存在 topics 里，这里也能兼容
+    topics = getattr(item, "topics", [])
+    if topics:
+        return str(topics[0])
+
+    return "Not available"
+
+
+def _paper_date_label(item: PaperArchive) -> str:
+    published_at = getattr(item, "published_at", None)
+
+    if published_at is None:
+        return "Unknown date"
+
+    try:
+        return published_at.strftime("%Y-%m-%d")
+    except AttributeError:
+        return str(published_at)
+
+
+def _paper_highlight(item: PaperArchive) -> str:
+    # 不再显示 keyword match reason
+    # 优先显示 LLM analysis 的一句话结论；没有的话显示 abstract summary
+    analysis = getattr(item, "analysis", None)
+
+    if analysis is not None:
+        conclusion = getattr(analysis, "conclusion", "")
+        if conclusion:
+            return _truncate(conclusion, 240)
+
+        contributions = getattr(analysis, "contributions", [])
+        if contributions:
+            return _truncate("；".join(contributions[:2]), 260)
+
+    summary = getattr(item, "summary", "")
+    if summary:
+        return _truncate(summary, 260)
+
+    return "No highlight available."
 
 def _render_feed_overview_card(overview: FeedOverview, *, link_prefix: str) -> str:
     feed_href = escape(link_prefix + "feeds/" + overview.slug + ".html")
