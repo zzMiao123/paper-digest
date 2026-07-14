@@ -236,7 +236,6 @@ def parse_crossref_item(item: dict[str, object]) -> Paper:
         raise CrossrefSkipItem(f"journal not in whitelist: {journal}")
 
     
-    
     authors = _extract_authors(item.get("author"))
 
     return Paper(
