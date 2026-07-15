@@ -2974,7 +2974,10 @@ def _render_feed_card(
     link_prefix: str,
     feed_page_link: bool,
 ) -> str:
-    titles = "".join(_render_feed_paper_item(item, link_prefix=link_prefix) for item in feed.papers)
+    titles = "".join(
+        _render_feed_paper_item(item, link_prefix=link_prefix)
+        for item in feed.papers
+    )
     title_list = f"<ul>{titles}</ul>" if titles else ""
 
     feed_href = escape(link_prefix + "feeds/" + feed.slug + ".html")
@@ -2994,6 +2997,88 @@ def _render_feed_card(
         f"{title_list}"
         f"</article>"
     )
+
+def _render_feed_paper_item(item: PaperArchive, *, link_prefix: str) -> str:
+    journal = _paper_tag_value(item, "Journal", "Unknown journal")
+    impact_factor = _paper_tag_value(item, "IF", "check JCR")
+    last_author = _paper_last_author(item)
+    date_label = _paper_date_label(item)
+
+    title_line = (
+        f'<a href="{escape(link_prefix + item.detail_href)}">'
+        f"{escape(item.title)}"
+        f"</a>"
+    )
+
+    if item.relevance_score > 0:
+        title_line += f" · Score {item.relevance_score}"
+
+    meta_line = (
+        f'<div class="paper-meta">'
+        f"{escape(journal)}"
+        f" · IF {escape(impact_factor)}"
+        f" · {escape(date_label)}"
+        f" · Last author: {escape(last_author)}"
+        f"</div>"
+    )
+
+    reason_line = (
+        f'<div class="paper-reasons">'
+        f"{escape(_truncate(item.reason_summary, 120))}"
+        f"</div>"
+        if item.reason_summary
+        else ""
+    )
+
+    source_line = (
+        f'<div class="paper-source">'
+        f'<a href="{escape(item.href)}">原始来源</a>'
+        f"</div>"
+    )
+
+    return (
+        "<li>"
+        f"{title_line}"
+        f"{meta_line}"
+        f"{reason_line}"
+        f"{source_line}"
+        "</li>"
+    )
+
+
+def _paper_tag_value(item: PaperArchive, prefix: str, default: str = "") -> str:
+    marker = prefix + ":"
+
+    for tag in getattr(item, "tags", []):
+        if isinstance(tag, str) and tag.startswith(marker):
+            return tag.split(":", maxsplit=1)[1].strip()
+
+    return default
+
+
+def _paper_last_author(item: PaperArchive) -> str:
+    authors = getattr(item, "authors", [])
+
+    if authors:
+        return str(authors[-1])
+
+    last_author = _paper_tag_value(item, "LastAuthor", "")
+    if last_author:
+        return last_author
+
+    return "Not available"
+
+
+def _paper_date_label(item: PaperArchive) -> str:
+    published_at = getattr(item, "published_at", None)
+
+    if published_at is None:
+        return "Unknown date"
+
+    try:
+        return published_at.strftime("%Y-%m-%d")
+    except AttributeError:
+        return str(published_at)
 
 def _render_feed_paper_item(item: PaperArchive, *, link_prefix: str) -> str:
     journal = _paper_tag_value(item, "Journal", "Unknown journal")
